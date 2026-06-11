@@ -156,14 +156,14 @@ def perform_ui_action(
         return {"status": "ok", "command": "ui-action", "action": "keyEvent", "keys": keys}
 
     elif action_type == "screenshot":
-        ts = int(time.time())
+        ts = int(time.time() * 1000)
         remote = save_path or f"/data/local/tmp/screenshot_{ts}.png"
         local = Path(local_path) if local_path else config.project_path / "screenshot" / f"{ts}.png"
         local.parent.mkdir(parents=True, exist_ok=True)
 
-        cmd = [*hdc_t, "shell", "snapshot_display", "-f", remote]
+        cmd = [*hdc_t, "shell", "uitest", "screenCap", "-p", remote]
         if display_id is not None:
-            cmd += ["-id", str(display_id)]
+            cmd += ["-d", str(display_id)]
 
         progress("截图中...")
         r = run_cmd(cmd)
@@ -173,6 +173,8 @@ def perform_ui_action(
         recv = run_cmd([*hdc_t, "file", "recv", remote, str(local)])
         if not recv.ok:
             return _err("截图传输失败", recv.stderr)
+        if not local.exists() or local.stat().st_size == 0:
+            return _err("截图传输失败", f"本地文件未生成或为空: {local}")
 
         return {"status": "ok", "command": "ui-action", "action": "screenshot",
                 "file": str(local), "message": f"截图已保存到 {local}"}
