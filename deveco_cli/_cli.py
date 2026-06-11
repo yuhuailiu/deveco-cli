@@ -121,6 +121,7 @@ def ui_action(
     device: Optional[str] = typer.Option(None, "--device", "-d", help="设备名或 ID"),
     x: Optional[int] = typer.Option(None, "--x", help="X 坐标（click/inputText 需要）"),
     y: Optional[int] = typer.Option(None, "--y", help="Y 坐标（click/inputText 需要）"),
+    element_id: Optional[str] = typer.Option(None, "--id", help="ArkUI 组件 id/key（click/inputText 可替代坐标）"),
     text: Optional[str] = typer.Option(None, "--text", help="输入文本（inputText 需要）"),
     direction: Optional[int] = typer.Option(None, "--direction",
                                             help="滑动方向: 0=左 1=右 2=上 3=下"),
@@ -140,7 +141,7 @@ def ui_action(
     from .commands.ui_action import perform_ui_action
     _run("ui-action", perform_ui_action,
          project, action_type, device,
-         x, y, text, direction, velocity, step_length,
+         x, y, element_id, text, direction, velocity, step_length,
          key1, key2, key3, save_path, local_path, display_id)
 
 

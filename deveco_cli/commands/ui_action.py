@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+import re
+import tempfile
 import time
 from pathlib import Path
 from typing import Optional
@@ -15,6 +18,7 @@ def perform_ui_action(
     device: Optional[str] = None,
     x: Optional[int] = None,
     y: Optional[int] = None,
+    element_id: Optional[str] = None,
     text: Optional[str] = None,
     direction: Optional[int] = None,
     velocity: Optional[int] = None,
@@ -40,29 +44,96 @@ def perform_ui_action(
             r["detail"] = detail[:2000]
         return r
 
+    def _resolve_point_by_id(wanted_id: str) -> tuple[int, int] | dict:
+        ts = int(time.time() * 1000)
+        remote = f"/data/local/tmp/ui_action_layout_{ts}.json"
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as tmp:
+            local = Path(tmp.name)
+        dump = run_cmd([*hdc_t, "shell", "uitest", "dumpLayout", "-p", remote])
+        if not dump.ok:
+            return _err("dumpLayout 失败，无法按 id 定位组件", dump.stderr or dump.stdout)
+        recv = run_cmd([*hdc_t, "file", "recv", remote, str(local)])
+        if not recv.ok:
+            return _err("拉取 dumpLayout 结果失败", recv.stderr or recv.stdout)
+        try:
+            data = json.loads(local.read_text(encoding="utf-8"))
+        except Exception as e:
+            return _err("解析 dumpLayout JSON 失败", str(e))
+        finally:
+            try:
+                local.unlink()
+            except OSError:
+                pass
+
+        matches: list[dict] = []
+
+        def walk(node: dict) -> None:
+            attrs = node.get("attributes", {})
+            if attrs.get("id") == wanted_id or attrs.get("key") == wanted_id:
+                matches.append(attrs)
+            for child in node.get("children", []):
+                walk(child)
+
+        walk(data)
+        if not matches:
+            return {
+                "status": "error", "command": "ui-action",
+                "error_type": "element_not_found",
+                "message": f"未在当前 UI 树中找到 id/key: {wanted_id}",
+            }
+        attrs = matches[0]
+        bounds = attrs.get("bounds", "")
+        match = re.match(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", bounds)
+        if not match:
+            return {
+                "status": "error", "command": "ui-action",
+                "error_type": "invalid_bounds",
+                "message": f"组件 {wanted_id} 缺少有效 bounds: {bounds}",
+            }
+        x1, y1, x2, y2 = [int(v) for v in match.groups()]
+        return (x1 + x2) // 2, (y1 + y2) // 2
+
     if action_type == "click":
+        resolved_id = element_id
+        if element_id is not None and (x is None or y is None):
+            point = _resolve_point_by_id(element_id)
+            if isinstance(point, dict):
+                return point
+            x, y = point
         if x is None or y is None:
             return {"status": "error", "command": "ui-action",
-                    "error_type": "missing_params", "message": "click 需要 --x 和 --y"}
+                    "error_type": "missing_params", "message": "click 需要 --x/--y 或 --id"}
         r = run_cmd([*hdc_t, "shell", "uitest", "uiInput", "click", str(x), str(y)])
         if not r.ok:
             return _err("click 操作失败", r.stderr)
-        return {"status": "ok", "command": "ui-action", "action": "click", "x": x, "y": y}
+        result = {"status": "ok", "command": "ui-action", "action": "click", "x": x, "y": y}
+        if resolved_id is not None:
+            result["id"] = resolved_id
+        return result
 
     elif action_type == "inputText":
+        resolved_id = element_id
+        if element_id is not None and (x is None or y is None):
+            point = _resolve_point_by_id(element_id)
+            if isinstance(point, dict):
+                return point
+            x, y = point
         if x is None or y is None or text is None:
             return {"status": "error", "command": "ui-action",
-                    "error_type": "missing_params", "message": "inputText 需要 --x, --y, --text"}
+                    "error_type": "missing_params", "message": "inputText 需要 --text，并提供 --x/--y 或 --id"}
         run_cmd([*hdc_t, "shell", "uitest", "uiInput", "click", str(x), str(y)])
         time.sleep(0.3)
         run_cmd([*hdc_t, "shell", "uitest", "uiInput", "keyEvent", "2072", "2017"])
         time.sleep(0.1)
         run_cmd([*hdc_t, "shell", "uitest", "uiInput", "keyEvent", "2071"])
         time.sleep(0.1)
-        r = run_cmd([*hdc_t, "shell", "uitest", "uiInput", "inputText", text])
+        r = run_cmd([*hdc_t, "shell", "uitest", "uiInput", "inputText", str(x), str(y), text])
         if not r.ok:
             return _err("inputText 操作失败", r.stderr)
-        return {"status": "ok", "command": "ui-action", "action": "inputText", "text": text}
+        result = {"status": "ok", "command": "ui-action", "action": "inputText", "text": text, "x": x, "y": y}
+        if resolved_id is not None:
+            result["id"] = resolved_id
+        return result
 
     elif action_type == "directionalFling":
         d = str(direction if direction is not None else 0)

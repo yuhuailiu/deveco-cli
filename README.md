@@ -264,13 +264,14 @@ deveco ui-action -p <工程路径> --type <类型> [类型专属参数...] [-d <
 | `--project` | `-p` | 是 | — | 鸿蒙工程根目录 |
 | `--type` | | 是 | — | 操作类型，见下表 |
 | `--device` | `-d` | 否 | 自动发现 | 设备名或 ID |
+| `--id` | | 否 | — | ArkUI 组件 id/key；`click` / `inputText` 可用它替代坐标 |
 
 **各类型专属参数**
 
 | `--type` | 专属参数 | 说明 |
 |---|---|---|
-| `click` | `--x`（必填）`--y`（必填）| 点击坐标 |
-| `inputText` | `--x`（必填）`--y`（必填）`--text`（必填）| 先清空再输入（click → 全选 → 删除 → 输入） |
+| `click` | `--x` + `--y`，或 `--id` | 点击坐标或指定 id/key 组件中心点 |
+| `inputText` | `--text`（必填），并提供 `--x` + `--y` 或 `--id` | 先清空再输入（click → 全选 → 删除 → 输入） |
 | `directionalFling` | `--direction`（0左/1右/2上/3下，默认0）`--velocity`（默认600）`--step-length`（默认200）| 方向滑动 |
 | `keyEvent` | `--key1`（必填）`--key2`（可选）`--key3`（可选）| 按键或组合键 |
 | `screenshot` | `--save-path`（设备路径，可选）`--local-path`（本地路径，可选）`--display-id`（多屏，可选）| 截图并拉取到本地 |
@@ -280,8 +281,14 @@ deveco ui-action -p <工程路径> --type <类型> [类型专属参数...] [-d <
 # 点击
 deveco ui-action -p ~/projects/MyApp --type click --x 360 --y 640
 
+# 按 ArkUI id 点击
+deveco ui-action -p ~/projects/MyApp --type click --id home-add-button
+
 # 在输入框输入文字
 deveco ui-action -p ~/projects/MyApp --type inputText --x 200 --y 300 --text "Hello World"
+
+# 按 ArkUI id 在输入框输入文字
+deveco ui-action -p ~/projects/MyApp --type inputText --id food-form-name-input --text "Hello World"
 
 # 向上滑动
 deveco ui-action -p ~/projects/MyApp --type directionalFling --direction 2 --velocity 800
