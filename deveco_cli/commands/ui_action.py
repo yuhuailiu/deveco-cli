@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
+import fcntl
 import json
 import re
 import tempfile
@@ -10,6 +12,17 @@ from typing import Optional
 from .._config import get_config
 from .._runner import ensure_device, run_cmd
 from .._output import progress
+
+
+@contextmanager
+def _dump_layout_lock():
+    lock_path = Path(tempfile.gettempdir()) / "deveco_cli_dump_layout.lock"
+    with lock_path.open("w") as lock_file:
+        fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
 
 
 def perform_ui_action(
@@ -45,25 +58,44 @@ def perform_ui_action(
         return r
 
     def _resolve_point_by_id(wanted_id: str) -> tuple[int, int] | dict:
-        ts = int(time.time() * 1000)
-        remote = f"/data/local/tmp/ui_action_layout_{ts}.json"
-        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as tmp:
-            local = Path(tmp.name)
-        dump = run_cmd([*hdc_t, "shell", "uitest", "dumpLayout", "-p", remote])
-        if not dump.ok:
-            return _err("dumpLayout 失败，无法按 id 定位组件", dump.stderr or dump.stdout)
-        recv = run_cmd([*hdc_t, "file", "recv", remote, str(local)])
-        if not recv.ok:
-            return _err("拉取 dumpLayout 结果失败", recv.stderr or recv.stdout)
-        try:
-            data = json.loads(local.read_text(encoding="utf-8"))
-        except Exception as e:
-            return _err("解析 dumpLayout JSON 失败", str(e))
-        finally:
+        last_detail = ""
+        data: dict | None = None
+        for attempt in range(1, 4):
+            ts = int(time.time() * 1000)
+            remote = f"/data/local/tmp/ui_action_layout_{ts}_{attempt}.json"
+            with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as tmp:
+                local = Path(tmp.name)
             try:
-                local.unlink()
-            except OSError:
-                pass
+                # `uitest dumpLayout` can produce an empty/partial file when multiple
+                # CLI processes dump concurrently. Serialize the dump/recv pair and
+                # retry empty parses so id-based actions remain reliable.
+                with _dump_layout_lock():
+                    dump = run_cmd([*hdc_t, "shell", "uitest", "dumpLayout", "-p", remote])
+                    if not dump.ok:
+                        return _err("dumpLayout 失败，无法按 id 定位组件", dump.stderr or dump.stdout)
+                    recv = run_cmd([*hdc_t, "file", "recv", remote, str(local)])
+                    if not recv.ok:
+                        return _err("拉取 dumpLayout 结果失败", recv.stderr or recv.stdout)
+
+                if not local.exists() or local.stat().st_size == 0:
+                    last_detail = f"dumpLayout 本地文件为空: {local}"
+                    time.sleep(0.15 * attempt)
+                    continue
+
+                try:
+                    data = json.loads(local.read_text(encoding="utf-8"))
+                    break
+                except Exception as e:
+                    last_detail = str(e)
+                    time.sleep(0.15 * attempt)
+            finally:
+                try:
+                    local.unlink()
+                except OSError:
+                    pass
+
+        if data is None:
+            return _err("解析 dumpLayout JSON 失败", last_detail)
 
         matches: list[dict] = []
 
