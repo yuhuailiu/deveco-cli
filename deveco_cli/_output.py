@@ -11,4 +11,4 @@ def emit(result: dict) -> None:
 
 def progress(message: str) -> None:
     """输出进度信息到 stderr，不干扰 JSON stdout。"""
-    print(f"[deveco] {message}", file=sys.stderr)
+    print(f"[deveco-cli] {message}", file=sys.stderr)

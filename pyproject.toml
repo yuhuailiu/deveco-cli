@@ -10,7 +10,7 @@ dependencies = [
 ]
 
 [project.scripts]
-deveco = "deveco_cli._cli:app"
+deveco-cli = "deveco_cli._cli:app"
 
 [build-system]
 requires = ["hatchling"]

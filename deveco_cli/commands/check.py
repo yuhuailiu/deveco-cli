@@ -113,7 +113,7 @@ def check_ets_files(project: Path | str, files: list[str | Path]) -> dict:
     except FileNotFoundError as e:
         return {"status": "error", "command": "check",
                 "error_type": "ace_server_not_found", "message": str(e),
-                "suggestion": "使用 deveco build 获取构建时的编译错误"}
+                "suggestion": "使用 deveco-cli build 获取构建时的编译错误"}
 
     # 加载 check 配置（如不存在则自动生成 deveco-cli.toml）
     check_cfg, _ = load_check_config(config.project_path, config)
@@ -165,7 +165,7 @@ def check_ets_files(project: Path | str, files: list[str | Path]) -> dict:
             return {"status": "error", "command": "check",
                     "error_type": "lsp_init_timeout",
                     "message": "ace-server 初始化超时或失败",
-                    "suggestion": "使用 deveco build 获取构建时的编译错误"}
+                    "suggestion": "使用 deveco-cli build 获取构建时的编译错误"}
 
         # initialized notification
         _send_lsp_msg(proc.stdin, {"jsonrpc": "2.0", "method": "initialized", "params": {}})
@@ -224,7 +224,7 @@ def check_ets_files(project: Path | str, files: list[str | Path]) -> dict:
     except Exception as e:
         return {"status": "error", "command": "check",
                 "error_type": "lsp_error", "message": f"LSP 通信错误: {e}",
-                "suggestion": "使用 deveco build 获取构建时的编译错误"}
+                "suggestion": "使用 deveco-cli build 获取构建时的编译错误"}
     finally:
         proc.terminate()
         try:

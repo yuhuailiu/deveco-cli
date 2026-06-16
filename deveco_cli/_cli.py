@@ -8,7 +8,7 @@ from typing import Optional
 import typer
 
 app = typer.Typer(
-    name="deveco",
+    name="deveco-cli",
     help="DevEco Studio 工具链 CLI（deveco-mcp 的 Python 替代）",
     no_args_is_help=True,
 )

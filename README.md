@@ -13,10 +13,10 @@ DevEco Studio 工具链的 Python CLI 封装。提供 8 条命令，覆盖鸿蒙
 uv pip install -e .   # 或 pip install -e .
 
 # 2. 验证
-deveco --help
+deveco-cli --help
 
 # 3. 第一条命令：构建工程
-deveco build --project /path/to/my-harmony-app
+deveco-cli build --project /path/to/my-harmony-app
 ```
 
 ---
@@ -25,14 +25,14 @@ deveco build --project /path/to/my-harmony-app
 
 | 命令 | 功能 | 典型用法 |
 |---|---|---|
-| `build` | 构建 HAP / HSP / HAR | `deveco build -p <工程路径>` |
-| `sync` | 同步工程依赖（ohpm + hvigorw） | `deveco sync -p <工程路径>` |
-| `check` | ArkTS 静态语法检查（LSP 级别） | `deveco check -p <工程路径> Index.ets` |
-| `start` | 安装并启动应用到设备 | `deveco start -p <工程路径>` |
-| `ui-tree` | 获取当前界面 UI 组件树 | `deveco ui-tree -p <工程路径> --mode simple -o ./out` |
-| `ui-action` | UI 操作：点击 / 输入 / 滑动 / 按键 / 截图 | `deveco ui-action -p <工程路径> --type click --x 360 --y 640` |
-| `knowledge` | 搜索 HarmonyOS 开发文档 | `deveco knowledge ArkTS Text 组件` |
-| `emulator` | 模拟器管理（list / start / stop） | `deveco emulator start --name "Pura 80 Ultra"` |
+| `build` | 构建 HAP / HSP / HAR | `deveco-cli build -p <工程路径>` |
+| `sync` | 同步工程依赖（ohpm + hvigorw） | `deveco-cli sync -p <工程路径>` |
+| `check` | ArkTS 静态语法检查（LSP 级别） | `deveco-cli check -p <工程路径> Index.ets` |
+| `start` | 安装并启动应用到设备 | `deveco-cli start -p <工程路径>` |
+| `ui-tree` | 获取当前界面 UI 组件树 | `deveco-cli ui-tree -p <工程路径> --mode simple -o ./out` |
+| `ui-action` | UI 操作：点击 / 输入 / 滑动 / 按键 / 截图 | `deveco-cli ui-action -p <工程路径> --type click --x 360 --y 640` |
+| `knowledge` | 搜索 HarmonyOS 开发文档 | `deveco-cli knowledge ArkTS Text 组件` |
+| `emulator` | 模拟器管理（list / start / stop） | `deveco-cli emulator start --name "Pura 80 Ultra"` |
 
 ---
 
@@ -44,7 +44,7 @@ deveco build --project /path/to/my-harmony-app
 
 **Synopsis**
 ```
-deveco build -p <工程路径> [-m <模块>] [--product <产品>] [-i <意图>] [--log-path <日志>]
+deveco-cli build -p <工程路径> [-m <模块>] [--product <产品>] [-i <意图>] [--log-path <日志>]
 ```
 
 **参数**
@@ -67,10 +67,10 @@ deveco build -p <工程路径> [-m <模块>] [--product <产品>] [-i <意图>] 
 **Example**
 ```bash
 # 构建整个 APP
-deveco build -p ~/projects/MyApp
+deveco-cli build -p ~/projects/MyApp
 
 # 仅构建 entry 模块，Release 模式
-deveco build -p ~/projects/MyApp -m entry@default -i Release
+deveco-cli build -p ~/projects/MyApp -m entry@default -i Release
 ```
 
 ```json
@@ -92,7 +92,7 @@ deveco build -p ~/projects/MyApp -m entry@default -i Release
 
 **Synopsis**
 ```
-deveco sync -p <工程路径> [--product <产品>] [--skip-ohpm] [--log-path <日志>]
+deveco-cli sync -p <工程路径> [--product <产品>] [--skip-ohpm] [--log-path <日志>]
 ```
 
 **参数**
@@ -106,10 +106,10 @@ deveco sync -p <工程路径> [--product <产品>] [--skip-ohpm] [--log-path <�
 
 **Example**
 ```bash
-deveco sync -p ~/projects/MyApp
+deveco-cli sync -p ~/projects/MyApp
 
 # 已运行过 ohpm，仅重新 sync hvigorw
-deveco sync -p ~/projects/MyApp --skip-ohpm
+deveco-cli sync -p ~/projects/MyApp --skip-ohpm
 ```
 
 ```json
@@ -128,7 +128,7 @@ deveco sync -p ~/projects/MyApp --skip-ohpm
 
 **Synopsis**
 ```
-deveco check -p <工程路径> <file.ets> [<file2.ets> ...]
+deveco-cli check -p <工程路径> <file.ets> [<file2.ets> ...]
 ```
 
 **参数**
@@ -140,10 +140,10 @@ deveco check -p <工程路径> <file.ets> [<file2.ets> ...]
 
 **Example**
 ```bash
-deveco check -p ~/projects/MyApp src/main/ets/pages/Index.ets
+deveco-cli check -p ~/projects/MyApp src/main/ets/pages/Index.ets
 
 # 同时检查多个文件
-deveco check -p ~/projects/MyApp src/main/ets/pages/Index.ets src/main/ets/components/Button.ets
+deveco-cli check -p ~/projects/MyApp src/main/ets/pages/Index.ets src/main/ets/components/Button.ets
 ```
 
 ```json
@@ -176,7 +176,7 @@ deveco check -p ~/projects/MyApp src/main/ets/pages/Index.ets src/main/ets/compo
 
 **Synopsis**
 ```
-deveco start -p <工程路径> [-m <模块>] [-t <构建目标>] [-d <设备>] [-a <Ability>]
+deveco-cli start -p <工程路径> [-m <模块>] [-t <构建目标>] [-d <设备>] [-a <Ability>]
 ```
 
 **参数**
@@ -191,10 +191,10 @@ deveco start -p <工程路径> [-m <模块>] [-t <构建目标>] [-d <设备>] [
 
 **Example**
 ```bash
-deveco start -p ~/projects/MyApp
+deveco-cli start -p ~/projects/MyApp
 
 # 指定设备和 Ability
-deveco start -p ~/projects/MyApp -d emulator-5554 -a MainAbility
+deveco-cli start -p ~/projects/MyApp -d emulator-5554 -a MainAbility
 ```
 
 ```json
@@ -216,7 +216,7 @@ Dump 当前界面的 UI 组件树并保存到本地目录。`full` 模式通过 
 
 **Synopsis**
 ```
-deveco ui-tree -p <工程路径> --mode simple|full -o <输出目录> [-d <设备>]
+deveco-cli ui-tree -p <工程路径> --mode simple|full -o <输出目录> [-d <设备>]
 ```
 
 **参数**
@@ -230,9 +230,9 @@ deveco ui-tree -p <工程路径> --mode simple|full -o <输出目录> [-d <设�
 
 **Example**
 ```bash
-deveco ui-tree -p ~/projects/MyApp --mode simple -o ./ui-snapshots
+deveco-cli ui-tree -p ~/projects/MyApp --mode simple -o ./ui-snapshots
 
-deveco ui-tree -p ~/projects/MyApp --mode full -o ./ui-snapshots -d 127.0.0.1:5555
+deveco-cli ui-tree -p ~/projects/MyApp --mode full -o ./ui-snapshots -d 127.0.0.1:5555
 ```
 
 ```json
@@ -254,7 +254,7 @@ deveco ui-tree -p ~/projects/MyApp --mode full -o ./ui-snapshots -d 127.0.0.1:55
 
 **Synopsis**
 ```
-deveco ui-action -p <工程路径> --type <类型> [类型专属参数...] [-d <设备>]
+deveco-cli ui-action -p <工程路径> --type <类型> [类型专属参数...] [-d <设备>]
 ```
 
 **通用参数**
@@ -279,25 +279,25 @@ deveco ui-action -p <工程路径> --type <类型> [类型专属参数...] [-d <
 **Example**
 ```bash
 # 点击
-deveco ui-action -p ~/projects/MyApp --type click --x 360 --y 640
+deveco-cli ui-action -p ~/projects/MyApp --type click --x 360 --y 640
 
 # 按 ArkUI id 点击
-deveco ui-action -p ~/projects/MyApp --type click --id home-add-button
+deveco-cli ui-action -p ~/projects/MyApp --type click --id home-add-button
 
 # 在输入框输入文字
-deveco ui-action -p ~/projects/MyApp --type inputText --x 200 --y 300 --text "Hello World"
+deveco-cli ui-action -p ~/projects/MyApp --type inputText --x 200 --y 300 --text "Hello World"
 
 # 按 ArkUI id 在输入框输入文字
-deveco ui-action -p ~/projects/MyApp --type inputText --id food-form-name-input --text "Hello World"
+deveco-cli ui-action -p ~/projects/MyApp --type inputText --id food-form-name-input --text "Hello World"
 
 # 向上滑动
-deveco ui-action -p ~/projects/MyApp --type directionalFling --direction 2 --velocity 800
+deveco-cli ui-action -p ~/projects/MyApp --type directionalFling --direction 2 --velocity 800
 
 # 按下返回键
-deveco ui-action -p ~/projects/MyApp --type keyEvent --key1 Back
+deveco-cli ui-action -p ~/projects/MyApp --type keyEvent --key1 Back
 
 # 截图保存到本地
-deveco ui-action -p ~/projects/MyApp --type screenshot --local-path ./screenshot.png
+deveco-cli ui-action -p ~/projects/MyApp --type screenshot --local-path ./screenshot.png
 ```
 
 ```json
@@ -317,7 +317,7 @@ deveco ui-action -p ~/projects/MyApp --type screenshot --local-path ./screenshot
 
 **Synopsis**
 ```
-deveco knowledge <关键词> [<关键词2> ...] [--max-chars <字符数>]
+deveco-cli knowledge <关键词> [<关键词2> ...] [--max-chars <字符数>]
 ```
 
 **参数**
@@ -329,9 +329,9 @@ deveco knowledge <关键词> [<关键词2> ...] [--max-chars <字符数>]
 
 **Example**
 ```bash
-deveco knowledge ArkTS Text 组件
+deveco-cli knowledge ArkTS Text 组件
 
-deveco knowledge 页面路由 router --max-chars 3000
+deveco-cli knowledge 页面路由 router --max-chars 3000
 ```
 
 ```json
@@ -351,25 +351,25 @@ deveco knowledge 页面路由 router --max-chars 3000
 
 **Synopsis**
 ```
-deveco emulator list
-deveco emulator start --name "<实例名>" [--wait-hdc <秒数>]
-deveco emulator stop  --name "<实例名>"
+deveco-cli emulator list
+deveco-cli emulator start --name "<实例名>" [--wait-hdc <秒数>]
+deveco-cli emulator stop  --name "<实例名>"
 ```
 
 **参数（start）**
 
 | 参数 | 短写 | 必填 | 默认值 | 说明 |
 |---|---|---|---|---|
-| `--name` | `-n` | 是 | — | 模拟器实例名（`deveco emulator list` 可查） |
+| `--name` | `-n` | 是 | — | 模拟器实例名（`deveco-cli emulator list` 可查） |
 | `--wait-hdc` | | 否 | `90` | 等待 hdc 发现设备的最大秒数，超时返回 `emulator_boot_timeout` |
 
 **Example**
 ```bash
-deveco emulator list
+deveco-cli emulator list
 
-deveco emulator start --name "Pura 80 Ultra" --wait-hdc 180
+deveco-cli emulator start --name "Pura 80 Ultra" --wait-hdc 180
 
-deveco emulator stop --name "Pura 80 Ultra"
+deveco-cli emulator stop --name "Pura 80 Ultra"
 ```
 
 ```json
@@ -394,7 +394,7 @@ deveco emulator stop --name "Pura 80 Ultra"
 所有命令均遵循同一套 JSON 协议：
 
 - **stdout**：唯一的机器可读输出，始终为合法 JSON
-- **stderr**：进度信息（格式 `[deveco] ...`），供人类阅读，**不要解析**
+- **stderr**：进度信息（格式 `[deveco-cli] ...`），供人类阅读，**不要解析**
 - **退出码**：`0` 成功，`1` 失败
 
 **成功响应通用字段**
@@ -452,7 +452,7 @@ deveco-cli 的设计目标之一是作为 Agent 的工具调用层：
 import subprocess, json
 
 result = subprocess.run(
-    ["deveco", "build", "--project", project_path],
+    ["deveco-cli", "build", "--project", project_path],
     capture_output=True, text=True
 )
 # stdout 是 JSON，stderr 是进度日志（不解析）

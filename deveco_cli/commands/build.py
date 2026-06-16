@@ -87,7 +87,7 @@ def build_project(
             "error_type": "build_failed",
             "message": f"hvigorw {task} 失败（退出码 {build.returncode}）",
             "detail": (build.stderr or build.stdout)[:2000],
-            "suggestion": "检查 ArkTS 语法错误，或运行 deveco check 进行静态检查",
+            "suggestion": "检查 ArkTS 语法错误，或运行 deveco-cli check 进行静态检查",
         }
 
     hap_files = list(config.project_path.rglob("build/**/*.hap"))

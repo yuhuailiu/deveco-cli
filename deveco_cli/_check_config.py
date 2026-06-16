@@ -55,7 +55,7 @@ def _generate_default_toml(config: DevEcoConfig) -> str:
     sdk_js = str(config.sdk_ets_api)
     ace_loader = str(config.ace_loader)
     return (
-        "# deveco-cli.toml — deveco CLI 配置\n"
+        "# deveco-cli.toml — deveco-cli 配置\n"
         "# 以下参数用于 ace-server LSP 初始化，默认值从 SDK 和项目配置自动检测。\n"
         "# 如需覆盖，直接修改对应字段。\n"
         "\n"
