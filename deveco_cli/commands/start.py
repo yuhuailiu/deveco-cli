@@ -71,7 +71,7 @@ def start_app(
     hap = _find_hap(config.project_path, module, target)
     if hap is None:
         return {"status": "error", "command": "start", "error_type": "hap_not_found",
-                "message": f"未找到 HAP 文件，请先运行 deveco build --project {project}"}
+                "message": f"未找到 HAP 文件，请先运行 deveco-cli build --project {project}"}
 
     # 安装
     progress(f"安装 {hap.name}...")
