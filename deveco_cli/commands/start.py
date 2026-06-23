@@ -5,7 +5,7 @@ from pathlib import Path
 
 from .._config import get_config
 from .._json5 import parse_json5
-from .._runner import run_cmd
+from .._runner import resolve_hdc_target, run_cmd
 from .._output import progress
 
 
@@ -47,8 +47,11 @@ def start_app(
 
     # 解析设备
     hdc_t = [hdc]
-    if device:
-        hdc_t = [hdc, "-t", device]
+    resolved_device, err = resolve_hdc_target(hdc, device)
+    if err is not None:
+        return {**err, "command": "start"}
+    if resolved_device:
+        hdc_t = [hdc, "-t", resolved_device]
     else:
         r = run_cmd([hdc, "list", "targets"])
         targets = [t.strip() for t in r.stdout.strip().split("\n")

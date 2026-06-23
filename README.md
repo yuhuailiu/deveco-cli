@@ -1,6 +1,6 @@
 # deveco-cli
 
-DevEco Studio 工具链的 Python CLI 封装。提供 8 条命令，覆盖鸿蒙应用开发从构建、UI 操控到模拟器管理的完整流程。**所有输出均为 JSON（stdout），进度信息输出到 stderr**，天然适合脚本自动化与 AI Agent 驱动场景。
+DevEco Studio 工具链的 Python CLI 封装。提供 9 条命令，覆盖鸿蒙应用开发从构建、UI 操控到日志采集和模拟器管理的完整流程。**所有输出均为 JSON（stdout），进度信息输出到 stderr**，天然适合脚本自动化与 AI Agent 驱动场景。
 
 > 仅支持 macOS，DevEco Studio 须已安装于本机。安装路径与鸿蒙工程路径均不得含空格。
 
@@ -32,6 +32,7 @@ deveco-cli build --project /path/to/my-harmony-app
 | `ui-tree` | 获取当前界面 UI 组件树 | `deveco-cli ui-tree -p <工程路径> --mode simple -o ./out` |
 | `ui-action` | UI 操作：点击 / 输入 / 滑动 / 按键 / 截图 | `deveco-cli ui-action -p <工程路径> --type click --x 360 --y 640` |
 | `knowledge` | 搜索 HarmonyOS 开发文档 | `deveco-cli knowledge ArkTS Text 组件` |
+| `hilog` | 设备日志采集与清理 | `deveco-cli hilog collect` |
 | `emulator` | 模拟器管理（list / start / stop） | `deveco-cli emulator start --name "Pura 80 Ultra"` |
 
 ---
@@ -345,9 +346,56 @@ deveco-cli knowledge 页面路由 router --max-chars 3000
 
 ---
 
+### `hilog` — 设备日志采集与清理
+
+通过 `hdc shell hilog` 采集、清理设备日志，并可列出当前 hdc 已连接设备。该命令不需要传入工程路径。
+
+**Synopsis**
+```
+deveco-cli hilog list-devices
+deveco-cli hilog clear [-d <设备>]
+deveco-cli hilog collect [-d <设备>] [--prefix <前缀>] [--lines <行数>]
+```
+
+**参数（clear / collect）**
+
+| 参数 | 短写 | 必填 | 默认值 | 说明 |
+|---|---|---|---|---|
+| `--device` | `-d` | 否 | 自动发现 | 设备名或 ID（来自 `hdc list targets`） |
+| `--prefix` | | 否 | 空字符串 | 日志过滤前缀，默认不过滤 |
+| `--lines` | | 否 | `2000` | 最多返回的日志行数，范围 `1-5000` |
+
+**Example**
+```bash
+deveco-cli hilog list-devices
+
+deveco-cli hilog clear
+
+deveco-cli hilog collect
+
+deveco-cli hilog collect -d 127.0.0.1:5555 --lines 500
+
+deveco-cli hilog collect --prefix "[ARKPILOT_DEBUG]"
+```
+
+```json
+{
+  "status": "ok",
+  "command": "hilog-collect",
+  "device": "default",
+  "prefix": "",
+  "requested_lines": 2000,
+  "count": 2,
+  "logs": ["..."],
+  "message": "采集到 2 行匹配日志"
+}
+```
+
+---
+
 ### `emulator` — 模拟器管理
 
-提供 `list / start / stop` 三个子命令，封装 `/Applications/DevEco-Studio.app/Contents/tools/emulator/Emulator`。`start` 会后台拉起 Emulator 进程，然后轮询 `hdc list targets` 直到设备出现。
+提供 `list / start / stop` 三个子命令，封装 `/Applications/DevEco-Studio.app/Contents/tools/emulator/Emulator`。`start` 会后台拉起 Emulator 进程，然后通过设备侧参数 `ohos.qemu.hvd.name` 反查实例名，直到找到与 `--name` 对应的 `hdc target`。
 
 **Synopsis**
 ```
@@ -383,7 +431,7 @@ deveco-cli emulator stop --name "Pura 80 Ultra"
 }
 ```
 
-若 hdc 已有设备，`start` 会直接返回 `already_running: true` 而不再启动新实例。
+若目标实例已经在运行，`start` 会返回 `already_running: true`，并给出该实例对应的 `connected_devices`。其他真机或模拟器在线不会阻止启动指定实例。
 
 **`error_type` 扩展**：`deveco_not_found` / `emulator_not_found` / `emulator_exited` / `emulator_boot_timeout` / `popen_failed` / `list_failed` / `stop_failed`。
 
@@ -438,7 +486,10 @@ deveco-cli emulator stop --name "Pura 80 Ultra"
 | 变量 | 默认值 | 说明 |
 |---|---|---|
 | `DEVECO_PATH` | `/Applications/DevEco-Studio.app` | DevEco Studio 安装路径 |
+| `DEFAULT_HVD` | — | 默认设备/模拟器实例名。影响 `start`、`ui-tree`、`ui-action`、`hilog clear`、`hilog collect`；会解析为对应的 `hdc target` |
 | `ADK_KNOWLEDGE_API` | 内置地址 | `knowledge` 命令使用的搜索 API endpoint |
+
+`DEFAULT_HVD` 仅匹配已连接设备或已运行模拟器实例；不会隐式启动模拟器。命令行显式传入的 `--device` 优先于该环境变量。
 
 ---
 

@@ -103,3 +103,11 @@ def get_config(project: Path | str) -> DevEcoConfig:
     if not project_path.exists():
         raise ProjectNotFoundError(f"工程路径不存在: {project_path}")
     return DevEcoConfig(deveco_path=deveco, project_path=project_path)
+
+
+def get_hdc() -> Path:
+    deveco = _resolve_deveco_path()
+    p = deveco / "Contents" / "sdk" / "default" / "openharmony" / "toolchains" / "hdc"
+    if not p.exists():
+        raise FileNotFoundError(f"hdc 未找到: {p}")
+    return p

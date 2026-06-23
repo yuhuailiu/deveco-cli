@@ -157,6 +157,43 @@ def knowledge(
     _run("knowledge", search_knowledge, keywords, max_chars)
 
 
+# ─── hilog ────────────────────────────────────────────────────────────────────
+
+hilog_app = typer.Typer(
+    name="hilog",
+    help="设备日志管理（list-devices / clear / collect）",
+    no_args_is_help=True,
+)
+app.add_typer(hilog_app)
+
+
+@hilog_app.command("list-devices")
+def hilog_list_devices():
+    """列出 hdc 已连接设备。"""
+    from .commands.hilog import list_hilog_devices
+    _run("hilog-list-devices", list_hilog_devices)
+
+
+@hilog_app.command("clear")
+def hilog_clear(
+    device: Optional[str] = typer.Option(None, "--device", "-d", help="设备名或 ID"),
+):
+    """清空设备 hilog 缓冲区。"""
+    from .commands.hilog import clear_hilog
+    _run("hilog-clear", clear_hilog, device)
+
+
+@hilog_app.command("collect")
+def hilog_collect(
+    device: Optional[str] = typer.Option(None, "--device", "-d", help="设备名或 ID"),
+    prefix: str = typer.Option("", "--prefix", help="日志过滤前缀，默认不过滤"),
+    lines: int = typer.Option(2000, "--lines", help="最多返回的日志行数，范围 1-5000"),
+):
+    """采集设备 hilog 日志。"""
+    from .commands.hilog import collect_hilog
+    _run("hilog-collect", collect_hilog, device, prefix, lines)
+
+
 # ─── emulator ─────────────────────────────────────────────────────────────────
 
 emulator_app = typer.Typer(

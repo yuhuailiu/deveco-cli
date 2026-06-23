@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Optional
 
 from .._config import get_config
-from .._runner import ensure_device, run_cmd
+from .._runner import ensure_device, resolve_hdc_target, run_cmd
 from .._output import progress
 
 
@@ -45,10 +45,13 @@ def perform_ui_action(
 ) -> dict:
     config = get_config(project)
     hdc = str(config.hdc)
-    err = ensure_device(hdc, device)
+    resolved_device, err = resolve_hdc_target(hdc, device)
     if err is not None:
         return {**err, "command": "ui-action"}
-    hdc_t = [hdc] + (["-t", device] if device else [])
+    err = ensure_device(hdc, resolved_device)
+    if err is not None:
+        return {**err, "command": "ui-action"}
+    hdc_t = [hdc] + (["-t", resolved_device] if resolved_device else [])
 
     def _err(msg: str, detail: str = "") -> dict:
         r = {"status": "error", "command": "ui-action",

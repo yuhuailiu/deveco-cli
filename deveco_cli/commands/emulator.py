@@ -71,6 +71,53 @@ def _hdc_targets(hdc: Path) -> list[str]:
     ]
 
 
+def _parse_param_value(text: str) -> str:
+    value = text.strip()
+    if "=" in value:
+        return value.split("=", 1)[1].strip()
+    return value
+
+
+def _is_emulator_target(hdc: Path, target: str) -> bool:
+    r = run_cmd(
+        [hdc, "-t", target, "shell", "param", "get", "const.product.name"],
+        timeout=10,
+    )
+    if not r.ok:
+        return False
+    return "emulator" in _parse_param_value(r.stdout).lower()
+
+
+def _emulator_name_for_target(hdc: Path, target: str) -> str | None:
+    r = run_cmd(
+        [hdc, "-t", target, "shell", "param", "get", "ohos.qemu.hvd.name"],
+        timeout=10,
+    )
+    if not r.ok:
+        return None
+    name = _parse_param_value(r.stdout)
+    return name or None
+
+
+def _connected_emulators(hdc: Path) -> list[dict[str, str]]:
+    emulators: list[dict[str, str]] = []
+    for target in _hdc_targets(hdc):
+        if not _is_emulator_target(hdc, target):
+            continue
+        name = _emulator_name_for_target(hdc, target)
+        if not name:
+            continue
+        emulators.append({"name": name, "target": target})
+    return emulators
+
+
+def _find_connected_emulator(hdc: Path, name: str) -> dict[str, str] | None:
+    for emulator in _connected_emulators(hdc):
+        if emulator["name"] == name:
+            return emulator
+    return None
+
+
 def list_emulators(deveco_path: Optional[Path] = None) -> dict:
     try:
         binary = _emulator_binary(deveco_path)
@@ -79,6 +126,8 @@ def list_emulators(deveco_path: Optional[Path] = None) -> dict:
             "status": "error", "command": "emulator-list",
             "error_type": "deveco_not_found", "message": str(e),
         }
+    hdc = _hdc_binary(deveco_path)
+    connected_by_name = {item["name"]: item["target"] for item in _connected_emulators(hdc)}
     r = run_cmd([binary, "-list"], timeout=15)
     if r.returncode != 0:
         return {
@@ -89,13 +138,27 @@ def list_emulators(deveco_path: Optional[Path] = None) -> dict:
     names = [n.strip() for n in r.stdout.strip().split("\n") if n.strip()]
     instances: list[dict] = []
     for name in names:
+        connected_target = connected_by_name.get(name)
         try:
             info = _read_instance_info(name)
-            instances.append({"name": name, **info})
+            instances.append(
+                {
+                    "name": name,
+                    "is_running": connected_target is not None,
+                    "connected_target": connected_target,
+                    **info,
+                }
+            )
         except FileNotFoundError:
             instances.append(
-                {"name": name, "instance_path": "",
-                 "image_sub_path": "", "sdk_path": ""}
+                {
+                    "name": name,
+                    "is_running": connected_target is not None,
+                    "connected_target": connected_target,
+                    "instance_path": "",
+                    "image_sub_path": "",
+                    "sdk_path": "",
+                }
             )
     return {
         "status": "ok", "command": "emulator-list", "instances": instances,
@@ -116,13 +179,14 @@ def start_emulator(
         }
 
     hdc = _hdc_binary(deveco_path)
-    existing = _hdc_targets(hdc)
-    if existing:
+    existing = set(_hdc_targets(hdc))
+    connected = _find_connected_emulator(hdc, name)
+    if connected is not None:
         return {
             "status": "ok", "command": "emulator-start",
             "name": name, "already_running": True,
-            "connected_devices": existing,
-            "message": f"hdc 已有连接设备: {existing}",
+            "connected_devices": [connected["target"]],
+            "message": f"模拟器已在运行: {connected['target']}",
         }
 
     try:
@@ -160,6 +224,15 @@ def start_emulator(
     poll_interval = 3
     last_targets: list[str] = []
     while time.monotonic() < deadline:
+        matched = _find_connected_emulator(hdc, name)
+        if matched is not None:
+            return {
+                "status": "ok", "command": "emulator-start",
+                "name": name, "pid": proc.pid,
+                "connected_devices": [matched["target"]],
+                "message": f"模拟器已启动: {matched['target']}",
+            }
+
         rc = proc.poll()
         if rc is not None:
             return {
@@ -168,20 +241,15 @@ def start_emulator(
                 "message": f"Emulator 进程提前退出（返回码 {rc}）",
             }
         last_targets = _hdc_targets(hdc)
-        if last_targets:
-            return {
-                "status": "ok", "command": "emulator-start",
-                "name": name, "pid": proc.pid,
-                "connected_devices": last_targets,
-                "message": f"模拟器已启动: {last_targets[0]}",
-            }
         time.sleep(poll_interval)
 
+    new_targets = sorted(set(last_targets) - existing)
     return {
         "status": "error", "command": "emulator-start",
         "error_type": "emulator_boot_timeout",
-        "message": f"等待 {wait_hdc_sec}s 仍未发现 hdc 设备",
+        "message": f"等待 {wait_hdc_sec}s 仍未发现实例 {name!r} 对应的 hdc 设备",
         "pid": proc.pid,
+        "observed_new_targets": new_targets,
     }
 
 
