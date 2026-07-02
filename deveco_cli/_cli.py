@@ -80,6 +80,15 @@ def check(
     _run("check", check_ets_files, project, files)
 
 
+@app.command(name="check-stop")
+def check_stop(
+    project: Path = typer.Option(..., "--project", "-p", help="HarmonyOS 工程根目录"),
+):
+    """停止指定工程的 check daemon。"""
+    from .commands.check import stop_check_daemon
+    _run("check-stop", stop_check_daemon, project)
+
+
 # ─── start ────────────────────────────────────────────────────────────────────
 
 @app.command()

@@ -18,3 +18,6 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["deveco_cli"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"deveco_cli/vendor/arkts-lang-server-0.2.4.cjs" = "deveco_cli/vendor/arkts-lang-server-0.2.4.cjs"

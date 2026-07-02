@@ -28,6 +28,7 @@ deveco-cli build --project /path/to/my-harmony-app
 | `build` | 构建 HAP / HSP / HAR | `deveco-cli build -p <工程路径>` |
 | `sync` | 同步工程依赖（ohpm + hvigorw） | `deveco-cli sync -p <工程路径>` |
 | `check` | ArkTS 静态语法检查（LSP 级别） | `deveco-cli check -p <工程路径> Index.ets` |
+| `check-stop` | 停止指定工程的 check daemon | `deveco-cli check-stop -p <工程路径>` |
 | `start` | 安装并启动应用到设备 | `deveco-cli start -p <工程路径>` |
 | `ui-tree` | 获取当前界面 UI 组件树 | `deveco-cli ui-tree -p <工程路径> --mode simple -o ./out` |
 | `ui-action` | UI 操作：点击 / 输入 / 滑动 / 按键 / 截图 | `deveco-cli ui-action -p <工程路径> --type click --x 360 --y 640` |
@@ -125,7 +126,9 @@ deveco-cli sync -p ~/projects/MyApp --skip-ohpm
 
 ### `check` — ArkTS 静态语法检查
 
-启动 DevEco Studio 内置的 `ace-server` LSP 服务，对指定 `.ets` 文件进行静态分析，返回与 IDE 一致的诊断结果。首次运行会在工程根目录自动生成 `deveco-cli.toml` 配置文件。
+启动 DevEco Studio 内置的 `ace-server` LSP 服务，对指定 `.ets` 文件进行静态分析，返回与 IDE 一致的诊断结果。`check` 通过内置 ArkTS LSP proxy 初始化 DevEco 工程模型；首次运行会在工程根目录自动生成 `deveco-cli.toml` 配置文件。
+
+`check` 默认会为每个工程启动并复用一个后台 daemon。daemon 的 socket、pid、状态和日志都放在工程根目录的 `.deveco-cli/` 下；同一工程会复用 daemon 中的 LSP 进程和内存索引。每次 `check` 请求都会刷新 30 分钟空闲计时，空闲超时后 daemon 自动退出。
 
 **Synopsis**
 ```
@@ -145,6 +148,9 @@ deveco-cli check -p ~/projects/MyApp src/main/ets/pages/Index.ets
 
 # 同时检查多个文件
 deveco-cli check -p ~/projects/MyApp src/main/ets/pages/Index.ets src/main/ets/components/Button.ets
+
+# 显式停止该工程的 check daemon
+deveco-cli check-stop -p ~/projects/MyApp
 ```
 
 ```json
@@ -529,7 +535,8 @@ check（静态检查）
 
 **注意事项**
 
-- `check` 首次运行较慢（ace-server 需要索引工程，最长等待约 5 分钟），后续快
+- `check` 首次运行需要初始化 ArkTS LSP；同一工程 30 分钟空闲窗口内会复用 daemon 和内存索引，每次请求都会续约 30 分钟
+- `check` 的 daemon 文件和 LSP 日志位于工程根目录 `.deveco-cli/`，可通过 `deveco-cli check-stop -p <工程路径>` 主动停止
 - `build` 超时 600 秒，`sync` 超时 300 秒，请勿过早中断
 - 多设备环境下建议始终传 `--device`，避免自动选择到非预期设备
 
